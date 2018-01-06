@@ -11,6 +11,6 @@ int main() {
     // double d = 5.00;
     // void *dp = &d;
     // int c = safe_reinterpret_cast<int>(dp);
-    STATIC_CHECKER(1 == 0, Destination_Type_Too_Narrow);
+    STATIC_CHECKER(1 == 0, Value_Not_Equal);
     return 0;
 }
