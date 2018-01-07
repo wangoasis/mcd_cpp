@@ -17,11 +17,11 @@ namespace Mcd {
         select type T or U based on boolean flag's value
     */
     template <bool flag, typename T, typename U>
-    struct select {
+    struct Select {
         typedef T Result;
     };
     template <typename T, typename U>
-    struct select<false, T, U> {
+    struct Select<false, T, U> {
         typedef U Result;
     };
 
