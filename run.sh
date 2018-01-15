@@ -9,4 +9,6 @@ echo "\ntest hierarchy_generators.h"
 g++ -o test_gen_scatter_hierarchy.o test_gen_scatter_hierarchy.cpp -std=c++11
 echo "\ntest test_callable.cpp"
 g++ -o test_callable.o test_callable.cpp -std=c++11
+echo "\ntest test_small_obj.cpp"
+g++ -o test_small_obj.o test_small_obj.cpp small_obj.cpp -std=c++11
 set -e
