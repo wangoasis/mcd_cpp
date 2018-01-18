@@ -216,11 +216,13 @@ namespace Mcd {
         //copy constructor
         Functor(const Functor& rhs)
         // unique_ptr.get() returns the raw pointer
-        : spImpl_(Impl::DoClone(rhs.spImpl_.get()))
+        : spImpl_(Impl::Clone(rhs.spImpl_.get()))
         {}
 
         Functor(std::unique_ptr<Impl> spImpl) 
-        : spImpl_(spImpl)
+        // here using std::move is very crucial, because unique_ptr has delete the copy
+        // constructor copying from another unique_ptr object
+        : spImpl_(std::move(spImpl))
         {}
 
         /* 
@@ -263,6 +265,82 @@ namespace Mcd {
         ResultType operator()(Parm1 p1, Parm2 p2, Parm3 p3, Parm4 p4, Parm5 p5) const
         { return (*spImpl_)(p1, p2, p3, p4, p5); }
     };
+
+    namespace Private
+    {
+        template <class Fctor> struct BinderFirstTraits;
+
+        template <typename R, class TList>
+        struct BinderFirstTraits< Functor<R, TList> >
+        {
+            typedef typename TL::Erase<TList, 
+                    typename TL::TypeAt<TList, 0>::Result>::Result
+                ParmList;
+            typedef Functor<R, ParmList> BoundFunctorType;
+            typedef typename BoundFunctorType::Impl Impl;
+        };        
+    } // namespace Private
+
+    /*
+        Binder template
+    */ 
+    template <class OriginalFunctor>
+    class BinderFirst : public Private::BinderFirstTraits<OriginalFunctor>::Impl {
+
+        typedef typename Private::BinderFirstTraits<OriginalFunctor>::Impl Base;
+        typedef typename OriginalFunctor::ResultType ResultType;
+
+        typedef typename OriginalFunctor::Parm1 BoundType;
+
+        typedef typename OriginalFunctor::Parm2 Parm1;
+        typedef typename OriginalFunctor::Parm3 Parm2;
+        typedef typename OriginalFunctor::Parm4 Parm3;
+        typedef typename OriginalFunctor::Parm5 Parm4;
+        typedef EmptyType Parm5;
+
+    public:
+        BinderFirst(const OriginalFunctor& fun, BoundType bound)
+        : f_(fun), b_(bound)
+        {}
+        
+        virtual BinderFirst* DoClone() const { 
+            return new BinderFirst(*this); 
+        }
+        
+        // operator() implementations for up to 5 arguments
+                
+        ResultType operator()()
+        { return f_(b_); }
+
+        ResultType operator()(Parm1 p1)
+        { return f_(b_, p1); }
+        
+        ResultType operator()(Parm1 p1, Parm2 p2)
+        { return f_(b_, p1, p2); }
+        
+        ResultType operator()(Parm1 p1, Parm2 p2, Parm3 p3)
+        { return f_(b_, p1, p2, p3); }
+        
+        ResultType operator()(Parm1 p1, Parm2 p2, Parm3 p3, Parm4 p4)
+        { return f_(b_, p1, p2, p3, p4); }
+        
+    private:
+        OriginalFunctor f_;
+        BoundType b_;
+    };
+    
+    template <class Fctor>
+    typename Private::BinderFirstTraits<Fctor>::BoundFunctorType
+    BindFirst(
+        const Fctor& fun,
+        typename Fctor::Parm1 bound)
+    {
+        typedef typename Private::BinderFirstTraits<Fctor>::BoundFunctorType
+            Outgoing;
+        
+        return Outgoing(std::unique_ptr<typename Outgoing::Impl>(
+            new BinderFirst<Fctor>(fun, bound)));
+    }
 } // namespace Mcd
 
 #endif

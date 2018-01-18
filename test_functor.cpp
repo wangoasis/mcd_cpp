@@ -26,6 +26,10 @@ public:
     }
 };
 
+int Sum(int i, int j) {
+    return i + j;
+}
+
 int main() {
 
     string s1("test"), s2(" functor");
@@ -56,4 +60,13 @@ int main() {
     Mcd::Functor<void> cmd1(&dog, &Dog::Eat), cmd2(&dog, &Dog::Speak);
     cmd1();
     cmd2();
+
+    /*
+        test Binder
+    */
+    Mcd::Functor<int, TYPELIST_2(int, int)> SumF(Sum);
+    // bind the first element to 10
+    Mcd::Functor<int, TYPELIST_1(int)> SumWithTen(Mcd::BindFirst(SumF, 10));
+    assert(SumWithTen(15) == 25);
+    assert(SumWithTen(20) == 30);
 }
